@@ -1,0 +1,165 @@
+.reservar-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .reservar-grid { grid-template-columns: 1fr; }
+}
+
+/* Calendar */
+.calendar-card { padding: 1.25rem; }
+
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.cal-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.view-tabs {
+  display: flex;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.view-tab {
+  padding: 0.3rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+.view-tab.active { background: var(--surface); color: var(--text); }
+
+/* Month */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.month-header {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0.4rem 0;
+  font-weight: 600;
+}
+
+.month-day {
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: var(--transition);
+}
+.month-day:hover:not(.disabled) { background: var(--surface2); }
+.month-day.selected { background: var(--accent); color: #ffffff; font-weight: 700; }
+.month-day.disabled { color: var(--border); cursor: not-allowed; }
+
+/* Week */
+.week-grid {
+  display: grid;
+  grid-template-columns: 40px repeat(7, 1fr);
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.week-time-col { padding-top: 36px; }
+.week-hour-label { height: 36px; font-size: 0.7rem; color: var(--muted); text-align: right; padding-right: 6px; display: flex; align-items: center; justify-content: flex-end; }
+
+.week-day-col { display: flex; flex-direction: column; }
+.week-day-header {
+  height: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  background: var(--surface2);
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+.week-day-header.today { color: var(--accent); }
+.week-day-header strong { font-size: 0.9rem; color: var(--text); }
+
+.week-cell {
+  height: 36px;
+  border: none;
+  background: var(--surface2);
+  border-radius: 4px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.week-cell:hover:not(.disabled) { background: rgba(79,99,210,0.1); }
+.week-cell.selected { background: rgba(79,99,210,0.15); border: 1px solid var(--accent); }
+.week-cell.disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Day view */
+.day-view { padding: 1rem 0; }
+.day-view-header { margin-bottom: 1rem; }
+.day-view-header h3 { font-size: 1.1rem; text-transform: capitalize; }
+
+/* Form */
+.form-section-title { font-size: 1.2rem; margin-bottom: 1.25rem; }
+
+.selected-date {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+/* Hour slots */
+.hours-grid { margin-bottom: 1.25rem; }
+.hours-grid label { display: block; font-size: 0.875rem; color: var(--muted); margin-bottom: 0.5rem; font-weight: 500; }
+.hour-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.hour-slot {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid;
+}
+.hour-slot.available { border-color: var(--border); color: var(--text); }
+.hour-slot.reserved { border-color: transparent; background: rgba(255,87,87,0.15); color: var(--danger); }
+
+.time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.cost-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(79,99,210,0.06);
+  border: 1px solid rgba(79,99,210,0.18);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.cost-display span { color: var(--muted); font-size: 0.9rem; }
+.cost-display strong { font-size: 1.4rem; font-family: var(--font-display); color: var(--accent); }
