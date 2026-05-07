@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 6120;
 
 // Middlewares
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'https://cowork.sofiai.com.mx/',
   credentials: true,
 }));
 app.use(express.json());
