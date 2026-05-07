@@ -117,6 +117,7 @@
 .week-cell:hover:not(.disabled) { background: rgba(79,99,210,0.1); }
 .week-cell.selected { background: rgba(79,99,210,0.15); border: 1px solid var(--accent); }
 .week-cell.disabled { opacity: 0.3; cursor: not-allowed; }
+.week-cell.has-reservation { cursor: default; }
 
 /* Day view */
 .day-view { padding: 1rem 0; }

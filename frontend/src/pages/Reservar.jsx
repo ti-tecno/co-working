@@ -18,6 +18,7 @@ export default function Reservar() {
   const [spaceTypes, setSpaceTypes] = useState([]);
   const [selectedType, setSelectedType] = useState('');
   const [availability, setAvailability] = useState([]);
+  const [allReservations, setAllReservations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -27,11 +28,22 @@ export default function Reservar() {
     api.get('/space-types').then((r) => setSpaceTypes(r.data));
   }, []);
 
+  // Load all reservations for calendar display
+  useEffect(() => {
+    api.get('/reservations/my')
+      .then((r) => setAllReservations(r.data.filter(res => res.status === 'active')))
+      .catch(err => console.error('Error loading reservations:', err));
+  }, []);
+
   useEffect(() => {
     if (selectedDate && selectedType) {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       api.get(`/reservations/availability?date=${dateStr}&space_type_id=${selectedType}`)
-        .then((r) => setAvailability(r.data.reserved));
+        .then((r) => setAvailability(r.data.reserved))
+        .catch((err) => {
+          console.error('Error loading availability:', err);
+          setAvailability([]);
+        });
     }
   }, [selectedDate, selectedType]);
 
@@ -39,6 +51,20 @@ export default function Reservar() {
     return availability.some((r) => {
       const startH = parseInt(r.start_time.split(':')[0]);
       const endH = parseInt(r.end_time.split(':')[0]);
+      return hour >= startH && hour < endH;
+    });
+  };
+
+  // Check if there's a reservation for a given day and hour
+  const getReservationForSlot = (day, hour) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    return allReservations.find(r => {
+      const resDate = r.reservation_date instanceof Date 
+        ? r.reservation_date.toISOString().slice(0, 10)
+        : String(r.reservation_date).slice(0, 10);
+      if (resDate !== dayStr) return false;
+      const startH = parseInt(String(r.start_time).split(':')[0]);
+      const endH = parseInt(String(r.end_time).split(':')[0]);
       return hour >= startH && hour < endH;
     });
   };
@@ -155,13 +181,18 @@ export default function Reservar() {
                         <span>{format(day, 'EEE', { locale: es })}</span>
                         <strong>{format(day, 'd')}</strong>
                       </div>
-                      {HOURS.map((h) => (
-                        <button
-                          key={h}
-                          onClick={() => !isPast(day) && !isWeekend(day) && setSelectedDate(day)}
-                          className={`week-cell ${isSameDay(day, selectedDate) ? 'selected' : ''} ${isPast(day) || isWeekend(day) ? 'disabled' : ''}`}
-                        />
-                      ))}
+                      {HOURS.map((h) => {
+                        const res = getReservationForSlot(day, h);
+                        return (
+                          <button
+                            key={h}
+                            onClick={() => !isPast(day) && !isWeekend(day) && setSelectedDate(day)}
+                            className={`week-cell ${isSameDay(day, selectedDate) ? 'selected' : ''} ${isPast(day) || isWeekend(day) ? 'disabled' : ''} ${res ? 'has-reservation' : ''}`}
+                            style={res ? { background: res.space_color, opacity: 0.7 } : undefined}
+                            title={res ? `${res.space_name}: ${String(res.start_time).slice(0,5)}-${String(res.end_time).slice(0,5)}` : undefined}
+                          />
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
