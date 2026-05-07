@@ -1,7 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const https = require('https');
+const fs = require('fs');
+const PORT = process.env.PORT || 6120;
+
 
 // Middlewares
 app.use(cors({
@@ -25,5 +29,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+//Congiguracion para HTTPS
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/api.eventopolis.com.mx/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/api.eventopolis.com.mx/fullchain.pem'),
+};
+
+https.createServer(options, app).listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  });
