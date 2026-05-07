@@ -37,6 +37,9 @@ export default function MisReservas() {
     try {
       const { data } = await api.get('/reservations/my');
       setReservations(data);
+    } catch (err) {
+      console.error('Error loading reservations:', err);
+      alert(err.response?.data?.error || 'Error al cargar reservas');
     } finally {
       setLoading(false);
     }
