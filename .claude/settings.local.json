@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(npm list *)"
+      "Bash(npm list *)",
+      "Bash(node -e \"const pkg = require\\('./node_modules/animejs/package.json'\\); console.log\\(pkg.version, pkg.main, pkg.module, pkg.exports ? 'has exports' : 'no exports'\\)\")",
+      "Bash(node -e \"const m = require\\('./node_modules/animejs/dist/modules/index.cjs'\\); console.log\\(Object.keys\\(m\\).filter\\(k => !k.startsWith\\('_'\\)\\).join\\(', '\\)\\)\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)"
     ]
   }
 }

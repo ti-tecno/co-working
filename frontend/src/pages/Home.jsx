@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { animate, stagger, createTimeline, onScroll } from 'animejs';
 import { Armchair, Monitor, Users, MapPin, ShieldCheck, Wifi, Coffee, ParkingSquare, Clock4 } from 'lucide-react';
 import './Home.css';
 
@@ -20,6 +22,114 @@ const features = [
 
 export default function Home() {
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Hero: animación de entrada en cadena
+    const tl = createTimeline({ defaults: { easing: 'easeOutExpo' } });
+    tl
+      .add('.hero-badge',   { opacity: [0, 1], translateY: [-18, 0], duration: 520 }, 0)
+      .add('.hero h1',      { opacity: [0, 1], translateY: [38, 0],  duration: 720 }, 150)
+      .add('.hero-sub',     { opacity: [0, 1], translateY: [25, 0],  duration: 660 }, 340)
+      .add('.hero-actions', { opacity: [0, 1], translateY: [22, 0],  duration: 640 }, 490);
+
+    // Helper: anima cuando el elemento entra al viewport
+    const observers = [];
+    const onEnter = (selector, animations, threshold = 0.12) => {
+      const el = document.querySelector(selector);
+      if (!el) return;
+      const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          animations.forEach(({ targets, ...props }) => animate(targets, props));
+          obs.disconnect();
+        }
+      }, { threshold });
+      obs.observe(el);
+      observers.push(obs);
+    };
+
+    // Tarjetas de espacios
+    onEnter('.features-section', [
+      {
+        targets: '.feature-card',
+        opacity: [0, 1], translateY: [45, 0],
+        delay: stagger(140), duration: 720, easing: 'easeOutExpo',
+      },
+    ]);
+
+    // Sección amenidades
+    onEnter('.amenities-section', [
+      {
+        targets: '.amenities-img-wrapper',
+        opacity: [0, 1], translateX: [-50, 0],
+        duration: 820, easing: 'easeOutExpo',
+      },
+      {
+        targets: '.amenities-label',
+        opacity: [0, 1], translateY: [20, 0],
+        duration: 580, delay: 120, easing: 'easeOutExpo',
+      },
+      {
+        targets: '.amenities-title',
+        opacity: [0, 1], translateY: [28, 0],
+        duration: 650, delay: 230, easing: 'easeOutExpo',
+      },
+      {
+        targets: '.amenity-row',
+        opacity: [0, 1], translateX: [30, 0],
+        delay: stagger(90, { start: 330 }), duration: 600, easing: 'easeOutExpo',
+      },
+    ]);
+
+    // CTA
+    onEnter('.cta-section', [
+      {
+        targets: '.cta-box',
+        opacity: [0, 1], translateY: [32, 0], scale: [0.96, 1],
+        duration: 720, easing: 'easeOutExpo',
+      },
+    ]);
+
+    // Parallax: fondo del hero (capa más lejana, se desplaza más)
+    const heroBgParallax = animate('.hero-bg', {
+      translateY: [0, 130],
+      ease: 'linear',
+      autoplay: onScroll({
+        target: '.hero',
+        sync: true,
+        enter: 'top top',
+        leave: 'bottom top',
+      }),
+    });
+
+    // Parallax: contenido del hero (capa media, desplazamiento menor)
+    const heroContentParallax = animate('.hero-content', {
+      translateY: [0, 55],
+      ease: 'linear',
+      autoplay: onScroll({
+        target: '.hero',
+        sync: true,
+        enter: 'top top',
+        leave: 'bottom top',
+      }),
+    });
+
+    // Parallax: imagen de amenidades dentro de su contenedor con overflow:hidden
+    const amenitiesParallax = animate('.amenities-img', {
+      translateY: [-35, 35],
+      ease: 'linear',
+      autoplay: onScroll({
+        target: '.amenities-section',
+        sync: true,
+      }),
+    });
+
+    return () => {
+      observers.forEach(o => o.disconnect());
+      heroBgParallax.cancel();
+      heroContentParallax.cancel();
+      amenitiesParallax.cancel();
+    };
+  }, []);
 
   return (
     <div className="home">
