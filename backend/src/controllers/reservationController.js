@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { sendReservationConfirmationEmail, sendAdminReservationNotificationEmail } = require('../services/emailService');
 
 const OPEN_HOUR = 9;
 const CLOSE_HOUR = 18;
@@ -92,6 +93,27 @@ exports.create = async (req, res) => {
   });
 
   const created = await db('coworking_reservations').where({ id }).first();
+
+  const sharedPayload = {
+    reservationId: created.id,
+    reservationDate: created.reservation_date,
+    startTime: created.start_time,
+    endTime: created.end_time,
+    totalCost: created.total_cost,
+    notes: created.notes,
+    spaceName: spaceType.name,
+  };
+
+  const results = await Promise.allSettled([
+    req.user?.email
+      ? sendReservationConfirmationEmail({ ...sharedPayload, toEmail: req.user.email, toName: req.user.name })
+      : Promise.resolve(),
+    sendAdminReservationNotificationEmail({ ...sharedPayload, userName: req.user.name, userEmail: req.user.email }),
+  ]);
+  results.forEach((r) => {
+    if (r.status === 'rejected') console.warn('No se pudo enviar correo:', r.reason?.message);
+  });
+
   res.status(201).json(created);
 };
 

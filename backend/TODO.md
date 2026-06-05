@@ -1,0 +1,3 @@
+- [x] Update `backend/src/services/testBrevoSmtp.js` to send a real test email to `jorgeluiscazas@gmail.com`.
+- [x] Run `node backend/src/services/testBrevoSmtp.js` and verify SMTP send result. (Failed: `BREVO_API_KEY is missing or empty in .env`)
+- [x] Mark tasks complete and report result.
