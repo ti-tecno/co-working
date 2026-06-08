@@ -4,10 +4,28 @@ const { sendReservationConfirmationEmail, sendAdminReservationNotificationEmail 
 const OPEN_HOUR = 9;
 const CLOSE_HOUR = 18;
 
+const normalizeTime = (value) => {
+  if (!value) return value;
+  const str = String(value);
+  const match = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return str;
+  const hh = String(match[1]).padStart(2, '0');
+  const mm = String(match[2]).padStart(2, '0');
+  const ss = String(match[3] || '00').padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+};
+
 const timeToMinutes = (t) => {
-  const [h, m] = t.split(':').map(Number);
+  const normalized = normalizeTime(t);
+  const [h, m] = normalized.split(':').map(Number);
   return h * 60 + m;
 };
+
+const formatReservationTimes = (reservation) => ({
+  ...reservation,
+  start_time: normalizeTime(reservation.start_time),
+  end_time: normalizeTime(reservation.end_time),
+});
 
 exports.getMyReservations = async (req, res) => {
   const reservations = await db('coworking_reservations')
@@ -20,7 +38,8 @@ exports.getMyReservations = async (req, res) => {
       'coworking_space_types.price_per_hour'
     )
     .orderBy('reservation_date', 'desc');
-  res.json(reservations);
+
+  res.json(reservations.map(formatReservationTimes));
 };
 
 exports.getAllReservations = async (req, res) => {
@@ -35,7 +54,8 @@ exports.getAllReservations = async (req, res) => {
       'coworking_users.email as user_email'
     )
     .orderBy('reservation_date', 'desc');
-  res.json(reservations);
+
+  res.json(reservations.map(formatReservationTimes));
 };
 
 exports.getAvailability = async (req, res) => {
@@ -47,7 +67,7 @@ exports.getAvailability = async (req, res) => {
     .where({ reservation_date: date, space_type_id, status: 'active' })
     .select('start_time', 'end_time');
 
-  res.json({ reserved });
+  res.json({ reserved: reserved.map(formatReservationTimes) });
 };
 
 exports.create = async (req, res) => {
@@ -56,8 +76,11 @@ exports.create = async (req, res) => {
   if (!space_type_id || !reservation_date || !start_time || !end_time)
     return res.status(400).json({ error: 'Todos los campos son requeridos' });
 
-  const startMin = timeToMinutes(start_time);
-  const endMin = timeToMinutes(end_time);
+  const normalizedStartTime = normalizeTime(start_time);
+  const normalizedEndTime = normalizeTime(end_time);
+
+  const startMin = timeToMinutes(normalizedStartTime);
+  const endMin = timeToMinutes(normalizedEndTime);
 
   if (startMin < OPEN_HOUR * 60 || endMin > CLOSE_HOUR * 60)
     return res.status(400).json({ error: 'Horario fuera del rango permitido (9:00 - 18:00)' });
@@ -68,7 +91,7 @@ exports.create = async (req, res) => {
   const conflict = await db('coworking_reservations')
     .where({ space_type_id, reservation_date, status: 'active' })
     .where(function () {
-      this.where('start_time', '<', end_time).andWhere('end_time', '>', start_time);
+      this.where('start_time', '<', normalizedEndTime).andWhere('end_time', '>', normalizedStartTime);
     })
     .first();
 
@@ -85,14 +108,15 @@ exports.create = async (req, res) => {
     user_id: req.user.id,
     space_type_id,
     reservation_date,
-    start_time,
-    end_time,
+    start_time: normalizedStartTime,
+    end_time: normalizedEndTime,
     total_cost,
     notes,
     status: 'active',
   });
 
-  const created = await db('coworking_reservations').where({ id }).first();
+  const createdRaw = await db('coworking_reservations').where({ id }).first();
+  const created = formatReservationTimes(createdRaw);
 
   const sharedPayload = {
     reservationId: created.id,
@@ -157,6 +181,7 @@ exports.update = async (req, res) => {
     total_cost,
   });
 
-  const updated = await db('coworking_reservations').where({ id }).first();
+  const updatedRaw = await db('coworking_reservations').where({ id }).first();
+  const updated = formatReservationTimes(updatedRaw);
   res.json(updated);
 };
