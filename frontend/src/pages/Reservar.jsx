@@ -55,18 +55,20 @@ export default function Reservar() {
     });
   };
 
-  // Check if there's a reservation for a given day and hour
-  const getReservationForSlot = (day, hour) => {
+  const getReservationsCountForDay = (day) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    return allReservations.find(r => {
-      const resDate = r.reservation_date instanceof Date 
+    return allReservations.filter((r) => {
+      const resDate = r.reservation_date instanceof Date
         ? r.reservation_date.toISOString().slice(0, 10)
         : String(r.reservation_date).slice(0, 10);
-      if (resDate !== dayStr) return false;
-      const startH = parseInt(String(r.start_time).split(':')[0]);
-      const endH = parseInt(String(r.end_time).split(':')[0]);
-      return hour >= startH && hour < endH;
-    });
+      return resDate === dayStr;
+    }).length;
+  };
+
+  const getOccupancyLevel = (count) => {
+    if (count >= 5) return { level: 'full', colorClass: 'occupancy-full', label: 'Lleno' };
+    if (count >= 1) return { level: 'warning', colorClass: 'occupancy-warning', label: 'Medio' };
+    return { level: 'empty', colorClass: 'occupancy-empty', label: 'Vacío' };
   };
 
   const cost = () => {
@@ -157,15 +159,21 @@ export default function Reservar() {
                   {Array.from({ length: (getMonthDays()[0].getDay() || 7) - 1 }).map((_, i) => (
                     <div key={`e${i}`} />
                   ))}
-                  {getMonthDays().map((day) => (
-                    <button
-                      key={day.toISOString()}
-                      onClick={() => !isPast(day) && !isWeekend(day) && setSelectedDate(day)}
-                      className={`month-day ${isSameDay(day, selectedDate) ? 'selected' : ''} ${isPast(day) || isWeekend(day) ? 'disabled' : ''}`}
-                    >
-                      {format(day, 'd')}
-                    </button>
-                  ))}
+                  {getMonthDays().map((day) => {
+                    const count = getReservationsCountForDay(day);
+                    const occupancy = getOccupancyLevel(count);
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        onClick={() => !isPast(day) && !isWeekend(day) && setSelectedDate(day)}
+                        className={`month-day ${occupancy.colorClass} ${isSameDay(day, selectedDate) ? 'selected' : ''} ${isPast(day) || isWeekend(day) ? 'disabled' : ''}`}
+                        title={`${count} reservas - ${occupancy.label}`}
+                      >
+                        <span className="month-day-number">{format(day, 'd')}</span>
+                        <span className="month-day-count">{count}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -175,26 +183,27 @@ export default function Reservar() {
                   <div className="week-time-col">
                     {HOURS.map((h) => <div key={h} className="week-hour-label">{h}:00</div>)}
                   </div>
-                  {getWeekDays().map((day) => (
-                    <div key={day.toISOString()} className="week-day-col">
-                      <div className={`week-day-header ${isSameDay(day, new Date()) ? 'today' : ''}`}>
-                        <span>{format(day, 'EEE', { locale: es })}</span>
-                        <strong>{format(day, 'd')}</strong>
-                      </div>
-                      {HOURS.map((h) => {
-                        const res = getReservationForSlot(day, h);
-                        return (
+                  {getWeekDays().map((day) => {
+                    const count = getReservationsCountForDay(day);
+                    const occupancy = getOccupancyLevel(count);
+                    return (
+                      <div key={day.toISOString()} className="week-day-col">
+                        <div className={`week-day-header ${isSameDay(day, new Date()) ? 'today' : ''}`}>
+                          <span>{format(day, 'EEE', { locale: es })}</span>
+                          <strong>{format(day, 'd')}</strong>
+                          <span className={`week-occupancy-badge ${occupancy.colorClass}`}>{count}</span>
+                        </div>
+                        {HOURS.map((h) => (
                           <button
                             key={h}
                             onClick={() => !isPast(day) && !isWeekend(day) && setSelectedDate(day)}
-                            className={`week-cell ${isSameDay(day, selectedDate) ? 'selected' : ''} ${isPast(day) || isWeekend(day) ? 'disabled' : ''} ${res ? 'has-reservation' : ''}`}
-                            style={res ? { background: res.space_color, opacity: 0.7 } : undefined}
-                            title={res ? `${res.space_name}: ${String(res.start_time).slice(0,5)}-${String(res.end_time).slice(0,5)}` : undefined}
+                            className={`week-cell ${occupancy.colorClass} ${isSameDay(day, selectedDate) ? 'selected' : ''} ${isPast(day) || isWeekend(day) ? 'disabled' : ''}`}
+                            title={`${count} reservas - ${occupancy.label}`}
                           />
-                        );
-                      })}
-                    </div>
-                  ))}
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -204,6 +213,16 @@ export default function Reservar() {
                   <div className="day-view-header">
                     <h3>{format(current, 'EEEE d MMMM', { locale: es })}</h3>
                   </div>
+                  {(() => {
+                    const count = getReservationsCountForDay(current);
+                    const occupancy = getOccupancyLevel(count);
+                    return (
+                      <div className={`day-occupancy-card ${occupancy.colorClass}`}>
+                        <span className="day-occupancy-label">{occupancy.label}</span>
+                        <strong>{count} reservas</strong>
+                      </div>
+                    );
+                  })()}
                   <button onClick={() => !isPast(current) && !isWeekend(current) && setSelectedDate(current)}
                     className={`btn ${isSameDay(current, selectedDate) ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
