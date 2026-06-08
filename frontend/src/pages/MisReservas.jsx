@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import './MisReservas.css';
 
-// Formatea fecha de forma segura sin importar si llega como string, Date o ISO
+// Formatea fecha de forma segura sin conversiones UTC que puedan restar un día
 function formatFecha(raw) {
   try {
     let str = '';
     if (raw instanceof Date) {
-      str = raw.toISOString().slice(0, 10);
+      const year = raw.getFullYear();
+      const month = String(raw.getMonth() + 1).padStart(2, '0');
+      const day = String(raw.getDate()).padStart(2, '0');
+      str = `${year}-${month}-${day}`;
     } else if (typeof raw === 'string') {
-      str = raw.slice(0, 10); // toma solo YYYY-MM-DD
+      const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      str = match ? match[1] : raw.slice(0, 10);
     } else {
       return String(raw);
     }

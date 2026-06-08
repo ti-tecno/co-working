@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks,
-         startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend, isBefore, startOfDay } from 'date-fns';
+         startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend, isBefore, startOfDay, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Check, X as XIcon, CalendarDays, Wallet } from 'lucide-react';
 import api from '../services/api';
@@ -55,14 +55,28 @@ export default function Reservar() {
     });
   };
 
+  const getReservationDateKey = (reservationDate) => {
+    if (!reservationDate) return '';
+
+    if (reservationDate instanceof Date) {
+      return format(reservationDate, 'yyyy-MM-dd');
+    }
+
+    if (typeof reservationDate === 'string') {
+      const plainDateMatch = reservationDate.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (plainDateMatch) return plainDateMatch[1];
+
+      const parsed = parseISO(reservationDate);
+      if (isValid(parsed)) return format(parsed, 'yyyy-MM-dd');
+    }
+
+    const parsed = new Date(reservationDate);
+    return isValid(parsed) ? format(parsed, 'yyyy-MM-dd') : '';
+  };
+
   const getReservationsCountForDay = (day) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    return allReservations.filter((r) => {
-      const resDate = r.reservation_date instanceof Date
-        ? r.reservation_date.toISOString().slice(0, 10)
-        : String(r.reservation_date).slice(0, 10);
-      return resDate === dayStr;
-    }).length;
+    return allReservations.filter((r) => getReservationDateKey(r.reservation_date) === dayStr).length;
   };
 
   const getOccupancyLevel = (count) => {

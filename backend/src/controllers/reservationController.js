@@ -21,8 +21,25 @@ const timeToMinutes = (t) => {
   return h * 60 + m;
 };
 
+const normalizeReservationDate = (value) => {
+  if (!value) return value;
+
+  // MySQL DATE puede llegar como Date o string; siempre devolver YYYY-MM-DD sin UTC shift
+  if (value instanceof Date) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const str = String(value);
+  const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : str;
+};
+
 const formatReservationTimes = (reservation) => ({
   ...reservation,
+  reservation_date: normalizeReservationDate(reservation.reservation_date),
   start_time: normalizeTime(reservation.start_time),
   end_time: normalizeTime(reservation.end_time),
 });
@@ -65,7 +82,7 @@ exports.getAvailability = async (req, res) => {
 
   const reserved = await db('coworking_reservations')
     .where({ reservation_date: date, space_type_id, status: 'active' })
-    .select('start_time', 'end_time');
+    .select('reservation_date', 'start_time', 'end_time');
 
   res.json({ reserved: reserved.map(formatReservationTimes) });
 };
